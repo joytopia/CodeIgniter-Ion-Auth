@@ -191,30 +191,31 @@ class Ion_auth
 			$user = $this->get_user_by_email($email);
 
 			$data = array(
+			     'email'         => $user->email,
 				'identity'		=> $user->{$this->ci->config->item('identity', 'ion_auth')},
 				'forgotten_password_code' => $user->forgotten_password_code
 			);
+            
 
-			$message = $this->ci->load->view($this->ci->config->item('email_templates', 'ion_auth').$this->ci->config->item('email_forgot_password', 'ion_auth'), $data, true);
-			$this->ci->email->clear();
-			$config['mailtype'] = "html";
-			$this->ci->email->initialize($config);
-			$this->ci->email->set_newline("\r\n");
-			$this->ci->email->from($this->ci->config->item('admin_email', 'ion_auth'), $this->ci->config->item('site_title', 'ion_auth'));
-			$this->ci->email->to($user->email);
-			$this->ci->email->subject($this->ci->config->item('site_title', 'ion_auth') . ' - Forgotten Password Verification');
-			$this->ci->email->message($message);
-
-			if ($this->ci->email->send())
-			{
-				$this->set_error('forgot_password_successful');
-				return TRUE;
-			}
+			$data = $this->get_message_from_template($this->ci->config->item('email_templates', 'ion_auth').$this->ci->config->item('email_forgot_password', 'ion_auth'), $data);
+            $data['subject'] = ($data['subject']) ? $data['subject'] : $this->ci->config->item('site_title', 'ion_auth') . ' - Forgotten Password Verification';
+					
+			if('data' == $this->ci->config->item('send_email', 'ion_auth')) 
+                return $data;
 			else
 			{
-				$this->set_error('forgot_password_unsuccessful');
-				return FALSE;
-			}
+			     if($this->send_email($data['email'], $data['subject'], $data['message'], $data['alt_message']))
+			     {
+			         $this->set_message('forgot_password_successful');
+			         //$this->set_error('forgot_password_successful');
+			         return ('both' == $this->ci->config->item('send_email', 'ion_auth')) ? $data : TRUE;			     
+			     }
+			     else
+			     {
+			         $this->set_error('forgot_password_unsuccessful');
+			         return false;
+			     }
+			 } 
 		}
 		else
 		{
@@ -245,31 +246,31 @@ class Ion_auth
 		if ($new_password)
 		{
 			$data = array(
+			     'email'       => $profile->email,
 				'identity'     => $profile->{$identity},
 				'new_password' => $new_password
 			);
 
-			$message = $this->ci->load->view($this->ci->config->item('email_templates', 'ion_auth').$this->ci->config->item('email_forgot_password_complete', 'ion_auth'), $data, true);
 
-			$this->ci->email->clear();
-			$config['mailtype'] = "html";
-			$this->ci->email->initialize($config);
-			$this->ci->email->set_newline("\r\n");
-			$this->ci->email->from($this->ci->config->item('admin_email', 'ion_auth'), $this->ci->config->item('site_title', 'ion_auth'));
-			$this->ci->email->to($profile->email);
-			$this->ci->email->subject($this->ci->config->item('site_title', 'ion_auth') . ' - New Password');
-			$this->ci->email->message($message);
-
-			if ($this->ci->email->send())
-			{
-				$this->set_error('password_change_successful');
-				return TRUE;
-			}
+			$data = $this->get_message_from_template($this->ci->config->item('email_templates', 'ion_auth').$this->ci->config->item('email_forgot_password_complete', 'ion_auth'), $data);
+            $data['subject'] = ($data['subject']) ? $data['subject'] : $this->ci->config->item('site_title', 'ion_auth') . ' - New Password';
+					
+			if('data' == $this->ci->config->item('send_email', 'ion_auth')) 
+                return $data;
 			else
 			{
-				$this->set_error('password_change_unsuccessful');
-				return FALSE;
-			}
+			     if($this->send_email($data['email'], $data['subject'], $data['message'], $data['alt_message']))
+			     {
+			         $this->set_message('password_change_successful');
+			         //$this->set_error('password_change_successful');
+			         return ('both' == $this->ci->config->item('send_email', 'ion_auth')) ? $data : TRUE;			     
+			     }
+			     else
+			     {
+			         $this->set_error('password_change_unsuccessful');
+			         return false;
+			     }
+			 } 			
 		}
 
 		$this->set_error('password_change_unsuccessful');
@@ -279,7 +280,7 @@ class Ion_auth
 	/**
 	 * register
 	 *
-	 * @return void
+	 * @return array or bool
 	 * @author Mathew
 	 **/
 	public function register($username, $password, $email, $additional_data, $group_name = false) //need to test email activation
@@ -327,28 +328,99 @@ class Ion_auth
         		 'email'      => $email,
         		 'activation' => $activation_code,
 			);
-
-			$message = $this->ci->load->view($this->ci->config->item('email_templates', 'ion_auth').$this->ci->config->item('email_activate', 'ion_auth'), $data, true);
-
-			$this->ci->email->clear();
-			$config['mailtype'] = "html";
-			$this->ci->email->initialize($config);
-			$this->ci->email->set_newline("\r\n");
-			$this->ci->email->from($this->ci->config->item('admin_email', 'ion_auth'), $this->ci->config->item('site_title', 'ion_auth'));
-			$this->ci->email->to($email);
-			$this->ci->email->subject($this->ci->config->item('site_title', 'ion_auth') . ' - Account Activation');
-			$this->ci->email->message($message);
-
-			if ($this->ci->email->send() == TRUE)
+			
+			$data = $this->get_message_from_template($this->ci->config->item('email_templates', 'ion_auth').$this->ci->config->item('email_activate', 'ion_auth'), $data);
+            $data['subject'] = ($data['subject']) ? $data['subject'] : $this->ci->config->item('site_title', 'ion_auth') . ' - Account Activation';
+					
+			if('data' == $this->ci->config->item('send_email', 'ion_auth')) 
+                return $data;
+			else
 			{
-				$this->set_message('activation_email_successful');
-				return TRUE;
-			}
-
-			$this->set_error('activation_email_unsuccessful');
-			return FALSE;
-		}
+			     if($this->send_email($data['email'], $data['subject'], $data['message'], $data['alt_message']))
+			     {
+			         $this->set_message('activation_email_successful');
+			         return ('both' == $this->ci->config->item('send_email', 'ion_auth')) ? $data : TRUE;			     
+			     }
+			     else
+			     {
+			         $this->set_error('activation_email_unsuccessful');
+			         return false;
+			     }
+			 }            
+        }
 	}
+	
+	/**
+	 * get_message_from_template
+	 *
+	 * detect Markers ###subject###, ###message### ###alt_message###
+	 * and adds the appropriate content to $data
+	 *
+	 * @return array
+	 * @author Bernd Hueckstaedt
+	 **/
+	public function get_message_from_template($template, $data)
+	{
+	    $string = $this->ci->load->view($template, $data, true);
+	    
+	    $subj_pos = strpos($string, '###subject###') +13;
+	    $msg_pos  = strpos($string, '###message###') +13;
+	    $alt_pos  = strpos($string, '###alt_message###') +17;
+	    
+	    $subj_len = strpos($string, '###message###') - $subj_pos;
+	    $msg_len  = ($alt_pos !== FALSE) ? strpos($string, '###alt_message###') - $msg_pos : strlen($string) - $msg_pos;
+	    $alt_len  = strlen($string) - $alt_pos;
+	    
+	    if(strpos($string, '###subject###') !== FALSE && strpos($string, '###message###') !== FALSE)
+	    {
+            $data['subject'] = trim(substr($string, $subj_pos, $subj_len));
+            $data['message'] = trim(substr($string, $msg_pos,  $msg_len));
+            $data['alt_message'] = (strpos($string, '###alt_message###') !== FALSE) ? trim(substr($string, $alt_pos,  $alt_len)) : '';
+	    }
+	    else
+	    {
+	       $data['subject'] = '';
+	       $data['message'] = $string;
+	       $data['alt_message'] = '';
+	    
+	    }
+        return $data;        
+	}	
+	
+	/**
+	 * send email
+	 * get mailtype (html or text) from config
+	 * supports alt_message
+	 *
+	 * @return bool
+	 * @author Bernd Hueckstaedt
+	 **/
+	public function send_email($email, $subject, $message, $alt_message = '')
+	{        
+        $this->ci->email->clear();
+        $config['mailtype'] = ($this->ci->config->item('mailtype', 'ion_auth')) ? $this->ci->config->item('mailtype', 'ion_auth') : 'html';
+        $this->ci->email->initialize($config);
+        $this->ci->email->set_newline("\r\n");
+        $this->ci->email->from($this->ci->config->item('admin_email', 'ion_auth'), $this->ci->config->item('site_title', 'ion_auth'));
+        $this->ci->email->to($email);			
+        $this->ci->email->subject($subject);
+        
+        if('html' == $config['mailtype'])
+        {		
+            $this->ci->email->message($message);
+            if($alt_message) $this->ci->email->set_alt_message($alt_message);
+        }
+        else
+        {
+            if($alt_message) $this->ci->email->message($alt_message);
+            else $this->ci->email->message($message);
+        }
+        
+        return $this->ci->email->send();        
+	}
+	
+	
+	
 
 	/**
 	 * login

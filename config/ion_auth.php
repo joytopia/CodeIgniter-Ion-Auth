@@ -94,9 +94,11 @@
 	
 	/**
 	 * Folder where email templates are stored.
-     * Default : auth/
+     * auth/email/ or auth/email_with_markers/
 	 **/
+	
 	$config['email_templates']     = 'auth/email/';
+	
 	
 	/**
 	 * activate Account Email Template
@@ -115,6 +117,25 @@
      * Default : new_password.tpl.php
 	 **/
 	$config['email_forgot_password_complete']   = 'new_password.tpl.php';
+	
+	
+	/**
+	 * Send email 
+	 * Ion_auth either sends an email directly (and returns bool)
+	 * or it returns a data-array, so that you can write your own email methods
+	 * or both
+	 * set to 'email', 'data' or 'both' 
+	 * Default : 'email'
+	 */
+	$config['send_email']	 = 'email';
+	
+	
+	/**
+	 * Mail type, 'text' or 'html'
+	 */
+	$config['mailtype']	 = 'html';
+	
+	
 	
 	/**
 	 * Salt Length
